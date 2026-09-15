@@ -1,0 +1,50 @@
+name: Deploy module browser
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 루트 의존성은 모듈 메타데이터 검증에 필요하다.
+      - run: npm ci
+      - run: npm ci
+        working-directory: web
+
+      # 고민 항목이 비어 있으면 여기서 빌드가 실패한다.
+      - run: npm run build
+        working-directory: web
+        env:
+          PAGES: '1'
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

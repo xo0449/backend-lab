@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -11,10 +12,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body>
         <header className="site-header">
-          <a href="/">backend-lab</a>
+          <Link href="/">backend-lab</Link>
           <a
             className="repo-link"
-            href="https://github.com/"
+            href="https://github.com/xo0449/backend-lab"
             target="_blank"
             rel="noreferrer"
           >

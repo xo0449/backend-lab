@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { marked } from 'marked'
 import { loadModule, loadModules } from '../../../lib/modules'
 
@@ -20,7 +21,7 @@ export default async function ModulePage({
 
   return (
     <>
-      <a className="back" href="/">← 목록</a>
+      <Link className="back" href="/">← 목록</Link>
 
       <div className="question" style={{ marginTop: '1.5rem' }}>
         <span>이 모듈에서 고민한 것</span>

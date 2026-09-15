@@ -6,3 +6,4 @@ results/*.json
 web/.next/
 web/out/
 web/node_modules/
+web/out/

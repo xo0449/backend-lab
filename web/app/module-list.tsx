@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { ModuleMeta } from '../../shared/module-meta'
 
 const FILTERS = [
@@ -29,7 +30,7 @@ export default function ModuleList({ modules }: { modules: ModuleMeta[] }) {
       </div>
 
       {shown.map((m) => (
-        <a className="card" key={m.slug} href={`/modules/${m.slug}`}>
+        <Link className="card" key={m.slug} href={`/modules/${m.slug}`}>
           <span className="type" data-type={m.type}>
             {m.type === 'experiment' ? '실험' : '구현'}
           </span>
@@ -44,7 +45,7 @@ export default function ModuleList({ modules }: { modules: ModuleMeta[] }) {
               <span className="tag" key={t}>{t}</span>
             ))}
           </div>
-        </a>
+        </Link>
       ))}
     </>
   )
