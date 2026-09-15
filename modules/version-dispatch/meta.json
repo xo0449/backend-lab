@@ -1,0 +1,14 @@
+{
+  "slug": "version-dispatch",
+  "type": "experiment",
+  "title": "switch로 범벅된 버전 분기를 표로 옮기기",
+  "summary": "플랫폼과 앱 버전, 배포 채널로 갈리는 SDK 분기를 선언적 표로 바꿨다. 전수 비교에서 기존 구현의 불일치 3건이 드러났다.",
+  "tags": ["리팩터링", "sdk", "버전관리", "설계"],
+  "question": "분기를 코드에서 데이터로 옮기면 무엇이 달라지는가",
+  "metrics": [
+    { "label": "의도와 어긋난 조합", "before": "3건 (450개 중)", "after": "0건" },
+    { "label": "플랫폼 분기 지점", "before": "6곳", "after": "표 1곳" },
+    { "label": "버전 비교 지점", "before": "15곳에 흩어짐", "after": "값 객체 1곳" }
+  ],
+  "createdAt": "2026-09-15"
+}
