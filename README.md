@@ -23,13 +23,27 @@
 ## 실행
 
 ```bash
-npm install
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
 npm run db:up
 npm test
 ```
 
-MySQL, Redis, MinIO, 카프카가 Docker로 뜹니다. 각 모듈의 측정을 재현하려면
-해당 폴더의 README를 참고하세요.
+MySQL, Redis, MinIO, 카프카가 Docker로 뜹니다.
+
+각 모듈의 측정은 바로 재현할 수 있습니다.
+
+```bash
+npm run lab:aggregation   # 12억 행 집계
+npm run lab:cron          # 크론 중복 실행
+npm run lab:version       # 버전 분기 전수 비교
+npm run lab:collector     # 스키마 변경 실험
+npm run lab:sdk           # SDK 안전장치와 번들 크기
+npm run lab:outbox        # 아웃박스와 직접 호출
+npm run lab:delivery      # 아웃박스, CDC, 카프카 비교
+```
+
+각 모듈 README 맨 아래의 "직접 실행해보기"에 케이스별 명령이 있습니다.
 
 ## 구조
 

@@ -246,3 +246,90 @@ B는 스위퍼 주기가 최악 지연을 정하고, C는 리더의 처리 속�
 C에서 아웃박스 테이블에 컬럼을 추가하고 리더를 그대로 두면
 무슨 일이 생기는지 확인하지 않았다. 배포 순서에 따라
 잘못 읽을 가능성이 있고, 그게 CDC의 실제 운영 비용이다.
+
+---
+
+## 직접 실행해보기
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+npm run db:up
+```
+
+MySQL, Redis, 카프카가 뜬다. 카프카는 처음 받을 때 시간이 좀 걸린다.
+
+binlog를 읽으려면 복제 권한 계정이 필요하다. 한 번만 만들면 된다.
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab -e "
+CREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED WITH mysql_native_password BY 'repl';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT, SELECT ON *.* TO 'repl'@'%';
+FLUSH PRIVILEGES;"
+```
+
+### 1. 네 시나리오 전부 돌리기
+
+```bash
+npm run lab:delivery
+```
+
+### 2. 시나리오 하나만 돌리기
+
+```bash
+ONLY=1 npm run lab:delivery   # 커밋 직후 크래시
+ONLY=2 npm run lab:delivery   # CDC로 발행 코드 없이
+ONLY=3 npm run lab:delivery   # CDC 리더 정지 후 재시작
+ONLY=4 npm run lab:delivery   # 오프셋 되감기
+```
+
+시나리오 2와 3은 같은 리더를 쓰므로 함께 돈다.
+
+### 3. binlog가 켜져 있는지 확인하기
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab -e "
+SELECT @@log_bin AS log_bin, @@binlog_format AS fmt, @@binlog_row_image AS img;"
+```
+
+`ROW` 포맷이어야 리더가 행 값을 볼 수 있다.
+
+### 4. 카프카 토픽과 메시지 보기
+
+```bash
+docker exec backend-lab-kafka-1 /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server 127.0.0.1:9092 --list
+```
+
+특정 토픽의 메시지를 처음부터 읽어본다.
+
+```bash
+docker exec backend-lab-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server 127.0.0.1:9092 --topic <토픽이름> --from-beginning --timeout-ms 3000
+```
+
+### 5. 리더를 죽여보기
+
+시나리오 3이 하는 일을 손으로 해볼 수도 있다.
+`bench/run.ts`에서 `cdc.stop()` 뒤의 대기 시간을 늘리고,
+그동안 아웃박스에 직접 행을 넣는다.
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab lab -e "
+INSERT INTO delivery_outbox (event_type, aggregate, payload, status)
+VALUES ('ShipmentReady', 'manual-1', '{\"code\":\"manual-1\"}', 'PENDING');"
+```
+
+리더가 돌아오면 이 행도 따라잡는다.
+
+### 6. 테스트
+
+```bash
+npx vitest run modules/delivery-comparison
+```
+
+### 정리
+
+```bash
+npm run db:down
+```

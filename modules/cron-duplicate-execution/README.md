@@ -287,3 +287,65 @@ it('락이 없으면 중복 행이 생긴다', async () => {
 
 이 실험은 배치 하나만 다뤘다. 여러 개가 되는 순간
 락 이름 설계가 새 문제로 등장한다.
+
+---
+
+## 직접 실행해보기
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+npm run db:up
+npm run lab:cron:seed
+```
+
+### 1. 중복을 재현하기
+
+워커 4개가 동시에 같은 배치를 돈다.
+
+```bash
+npm run lab:cron
+```
+
+`duplicated`가 0보다 크면 재현된 것이다.
+안 나오면 아이템을 늘려 계산 구간을 길게 만든다.
+
+```bash
+ITEMS=5000 npm run lab:cron:seed && npm run lab:cron
+```
+
+### 2. 락을 걸고 다시 보기
+
+```bash
+MODE=lock npm run lab:cron
+```
+
+한 워커만 삽입하고 나머지 셋은 건너뛴다.
+
+### 3. 워커 수 바꿔보기
+
+```bash
+WORKERS=8 npm run lab:cron
+MODE=lock WORKERS=8 npm run lab:cron
+```
+
+### 4. 락이 실제로 잡혀 있는지 보기
+
+배치가 도는 동안 다른 창에서 확인한다.
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab -e "
+SELECT IS_USED_LOCK('reevaluate:discount') AS holder_connection_id;"
+```
+
+### 5. 테스트
+
+```bash
+npx vitest run modules/cron-duplicate-execution
+```
+
+### 정리
+
+```bash
+npm run db:down
+```

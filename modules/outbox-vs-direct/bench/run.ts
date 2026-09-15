@@ -26,12 +26,17 @@ async function countReceived(receiver: Receiver, orderId: number | null) {
 
 const RUN = Date.now()
 
+/** ONLY=2 처럼 지정하면 그 시나리오만 돌린다. 비우면 전부 돈다. */
+const ONLY = process.env.ONLY ? Number(process.env.ONLY) : undefined
+const runs = (n: number) => ONLY === undefined || ONLY === n
+
 async function main() {
   const pool = createPool()
   const receiver = await startReceiver()
   const results: Record<string, unknown>[] = []
 
   // 시나리오 1. 커밋이 실패했는데 통보가 이미 나간 경우
+  if (runs(1)) {
   await reset(pool)
   const q1 = createQueue(`lab-${RUN}-1`)
   const w1 = startWorker(pool, `lab-${RUN}-1`)
@@ -47,8 +52,10 @@ async function main() {
   })
 
   await w1.close(); await q1.close()
+  }
 
   // 시나리오 2. 수신자가 죽어 있는 동안 주문이 들어온 경우
+  if (runs(2)) {
   await reset(pool)
   const q2 = createQueue(`lab-${RUN}-2`)
   const w2 = startWorker(pool, `lab-${RUN}-2`)
@@ -74,8 +81,10 @@ async function main() {
   })
 
   await w2.close(); await q2.close()
+  }
 
   // 시나리오 3. 수신자가 느릴 때 호출자가 얼마나 붙잡히는가
+  if (runs(3)) {
   await reset(pool)
   const q3 = createQueue(`lab-${RUN}-3`)
   const w3 = startWorker(pool, `lab-${RUN}-3`)
@@ -93,8 +102,10 @@ async function main() {
   await wait(4000)
 
   await w3.close(); await q3.close()
+  }
 
   // 시나리오 4. 적재가 빠진 경우 스위퍼가 줍는가
+  if (runs(4)) {
   await reset(pool)
   const q4 = createQueue(`lab-${RUN}-4`)
   const w4 = startWorker(pool, `lab-${RUN}-4`)
@@ -112,6 +123,7 @@ async function main() {
   })
 
   await w4.close(); await q4.close()
+  }
 
   console.log(JSON.stringify(results, null, 2))
 

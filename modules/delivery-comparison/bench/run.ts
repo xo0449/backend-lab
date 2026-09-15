@@ -22,6 +22,10 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const RUN = Date.now()
 const results: Record<string, unknown>[] = []
 
+/** ONLY=2 처럼 지정하면 그 시나리오만 돌린다. 비우면 전부 돈다. */
+const ONLY = process.env.ONLY ? Number(process.env.ONLY) : undefined
+const runs = (n: number) => ONLY === undefined || ONLY === n
+
 async function main() {
   const pool = createPool()
   const kafka = createKafka(`lab-${RUN}`)
@@ -45,6 +49,7 @@ async function main() {
   }
 
   // 시나리오 1. 커밋 직후 프로세스가 죽는다
+  if (runs(1)) {
   await resetSchema(pool)
   sink.clear()
 
@@ -64,7 +69,10 @@ async function main() {
     'B 복구 후': sink.count('B-crash') > 0 ? '도달' : '유실',
   })
 
-  // 시나리오 2. CDC는 발행 코드 없이도 나가는가
+  }
+
+  // 시나리오 2와 3은 같은 리더를 쓴다.
+  if (runs(2) || runs(3)) {
   await resetSchema(pool)
   sink.clear()
 
@@ -115,7 +123,10 @@ async function main() {
   })
   cdc2.stop()
 
+  }
+
   // 시나리오 4. 카프카는 오프셋을 되감아 재처리할 수 있는가
+  if (runs(4)) {
   sink.clear()
   await consumer.stop()
   await resetOffset(kafka, topic, `g-${RUN}`)
@@ -134,9 +145,11 @@ async function main() {
     '고유 건수': replaySink.unique,
   })
 
+  await replay.stop()
+  }
+
   console.log(JSON.stringify(results, null, 2))
 
-  await replay.stop()
   await producer.disconnect()
   await pool.end()
 }

@@ -528,3 +528,63 @@ flowchart TD
 아웃박스가 맞는 것은 "알리기만 하면 되는" 호출이다.
 이 구분을 안 하고 전부 옮기면 응답을 기다리는 코드가
 큐를 폴링하는 기괴한 모양이 된다.
+
+---
+
+## 직접 실행해보기
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+npm run db:up
+```
+
+MySQL과 Redis가 뜬다. 가짜 수신자는 스크립트가 직접 띄운다.
+
+### 1. 네 시나리오 전부 돌리기
+
+```bash
+npm run lab:outbox
+```
+
+### 2. 시나리오 하나만 돌리기
+
+```bash
+ONLY=1 npm run lab:outbox   # 트랜잭션 롤백
+ONLY=2 npm run lab:outbox   # 수신자 다운
+ONLY=3 npm run lab:outbox   # 수신자 지연
+ONLY=4 npm run lab:outbox   # 큐 적재 누락
+```
+
+### 3. 아웃박스 상태를 직접 보기
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab lab -e "
+SELECT status, COUNT(*) AS n FROM event_outbox GROUP BY status;"
+```
+
+시나리오 4를 스위퍼 없이 돌리면 `PENDING`이 남아 있는 것을 볼 수 있다.
+
+### 4. 스위퍼를 빼면 어떻게 되는지 보기
+
+`modules/outbox-vs-direct/bench/run.ts`의 시나리오 4에서
+`sweepOnce` 호출을 주석 처리한다.
+
+```bash
+ONLY=4 npm run lab:outbox
+```
+
+"스위퍼 후 도달"이 0으로 남는다. 아웃박스만 있고 스위퍼가 없으면
+적재가 빠진 이벤트는 영영 안 나간다.
+
+### 5. 테스트
+
+```bash
+npx vitest run modules/outbox-vs-direct
+```
+
+### 정리
+
+```bash
+npm run db:down
+```

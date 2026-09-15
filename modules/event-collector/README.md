@@ -387,3 +387,58 @@ itemId를 읽는 쿼리: [ [5, 2] ]
 필요한 것은 옛 파일을 다시 읽어 재적재하는 도구다. 지금은 jsonl이
 남아 있을 뿐이고 다시 돌리는 절차는 없다. 적재가 멱등하니 만들기는
 어렵지 않다.
+
+---
+
+## 직접 실행해보기
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+npm run db:up
+```
+
+MinIO 콘솔은 http://localhost:9001 에서 볼 수 있다. 계정은 `lab` / `labsecret`이다.
+
+### 1. 스키마 변경 실험
+
+v1 이벤트 2건과 v2 이벤트 3건을 같이 넣고 쿼리 결과를 본다.
+
+```bash
+npm run lab:collector
+```
+
+`itemId`를 읽는 쿼리가 5건 중 2건만 세는데 오류가 나지 않는 것을 확인한다.
+
+### 2. 객체 저장소에 쌓인 파일 보기
+
+```bash
+docker run --rm --network backend-lab_default \
+  -e MC_HOST_lab=http://lab:labsecret@minio:9000 \
+  quay.io/minio/mc ls --recursive lab/events/
+```
+
+`dt=날짜/hour=시각/` 아래에 파일이 나뉘어 있다.
+
+### 3. 버퍼 조건 바꿔보기
+
+`modules/event-collector/src/pipeline.test.ts`에서
+`maxEvents`와 `maxAgeMs`를 조정하고 돌린다.
+
+```bash
+npx vitest run modules/event-collector
+```
+
+### 4. 적재를 두 번 해보기
+
+같은 파일을 두 번 넣어도 행 수가 같은지 확인하는 테스트가 있다.
+
+```bash
+npx vitest run modules/event-collector -t "두 번 적재"
+```
+
+### 정리
+
+```bash
+npm run db:down
+```

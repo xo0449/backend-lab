@@ -507,3 +507,53 @@ A/B 테스트가 묻는 것은 "이 사용자에게 보여줄 것인가"다.
 전수 비교는 "다른 곳 3개"를 정확히 짚어준다.
 물어볼 것이 450개가 아니라 3개다.
 고치는 결정은 사람이 하고, 후보를 좁히는 일은 비교가 한다.
+
+---
+
+## 직접 실행해보기
+
+Docker가 필요 없다. 클론하고 바로 돈다.
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+```
+
+### 1. 전수 비교 돌리기
+
+조합 450개를 만들어 두 구현을 비교한다.
+
+```bash
+npm run lab:version
+```
+
+불일치 3건이 기능별로 묶여 나온다.
+
+### 2. 표를 고쳐 결과가 달라지는지 보기
+
+`modules/version-dispatch/src/capabilities.ts`에서
+`biometricLogin`의 `earlyAccess.channels`에서 `beta`를 빼본다.
+
+```bash
+npm run lab:version
+```
+
+불일치가 2건으로 줄어든다. 개선 전 코드와 같아졌다는 뜻이다.
+
+### 3. 새 플랫폼을 추가해보기
+
+`types.ts`의 `Platform`에 `'desktop'`을 더하고
+`capabilities.ts`의 `since`에 아무것도 넣지 않는다.
+
+```bash
+npx vitest run modules/version-dispatch
+```
+
+지원하지 않는 플랫폼은 어떤 버전이어도 거짓이라는 테스트가 그대로 통과한다.
+표에 빈 칸이 곧 미지원이기 때문이다.
+
+### 4. 테스트
+
+```bash
+npx vitest run modules/version-dispatch
+```

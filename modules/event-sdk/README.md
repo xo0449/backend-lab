@@ -317,7 +317,7 @@ if (queue.length > maxQueueSize) {
 | | 크기 |
 |---|---:|
 | minify | 1,424 bytes |
-| minify + gzip | 771 bytes |
+| minify + gzip | 756 bytes |
 
 ```bash
 npx esbuild modules/event-sdk/src/sdk.ts --bundle --minify --format=esm --outfile=/tmp/sdk.min.js
@@ -373,3 +373,56 @@ SDK 쪽에서 버전을 올려보는 실험이 빠져 있다.
 **큐를 버릴 때 아무도 모른다.** 상한을 넘겨 버린 건수를 세어 가끔 같이 보내면
 "데이터가 왜 적지"를 추적할 수 있다. 지금은 조용히 사라진다.
 수집기 쪽 교훈과 같은 모양이다. 문제는 오류가 아니라 침묵으로 나타난다.
+
+---
+
+## 직접 실행해보기
+
+Docker가 필요 없다. 클론하고 바로 돈다.
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+```
+
+### 1. 네 가지 확인 한 번에 돌리기
+
+```bash
+npm run lab:sdk
+```
+
+전송 실패가 호출자에 닿는지, 배치 조건, 큐 상한, 번들 크기를 차례로 잰다.
+
+### 2. 비동기 누출을 직접 만들어보기
+
+`modules/event-sdk/src/sdk.ts`의 `send`에서 `try/catch`를 지운다.
+
+```bash
+npm run lab:sdk
+```
+
+"처리되지 않은 거부"가 0이 아니게 된다. 이 값이 0이 아니면
+호스트 앱이 죽을 수 있는 상태다.
+
+### 3. 회귀 테스트가 그걸 잡는지 보기
+
+```bash
+npx vitest run modules/event-sdk -t "처리되지 않은 거부"
+```
+
+`try/catch`를 지운 상태에서는 이 테스트가 실패한다. 되돌리면 통과한다.
+
+### 4. 번들 크기 직접 재기
+
+```bash
+npx esbuild modules/event-sdk/src/sdk.ts --bundle --minify --format=esm --outfile=/tmp/sdk.js
+gzip -c /tmp/sdk.js | wc -c
+```
+
+의존성을 하나 추가하고 다시 재보면 차이를 알 수 있다.
+
+### 5. 테스트
+
+```bash
+npx vitest run modules/event-sdk
+```

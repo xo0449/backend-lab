@@ -289,3 +289,66 @@ sequenceDiagram
 시간을 같이 재지 않았다면 몰랐다.
 지표 하나는 대개 무엇을 재는지 알기 쉬워서 고르게 되는데,
 바로 그래서 놓치는 것도 생긴다.
+
+---
+
+## 직접 실행해보기
+
+```bash
+git clone https://github.com/xo0449/backend-lab.git
+cd backend-lab && npm install
+npm run db:up
+```
+
+### 1. 데이터 만들기
+
+혜택 1,500건, 결제 80만 건을 넣는다. 몇 초 걸린다.
+
+```bash
+npm run lab:aggregation:seed
+```
+
+건수를 바꾸려면 이렇게 한다.
+
+```bash
+BENEFITS=3000 PAYMENTS=1600000 npm run lab:aggregation:seed
+```
+
+### 2. 단계별로 측정하기
+
+다섯 단계를 순서대로 적용하며 매번 잰다.
+
+```bash
+npm run lab:aggregation
+```
+
+개선 전 쿼리는 2분 가까이 걸린다. 건너뛰려면 이렇게 한다.
+
+```bash
+SKIP_NAIVE=1 npm run lab:aggregation
+```
+
+### 3. 실행 계획 직접 보기
+
+```bash
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab lab -e "
+EXPLAIN FORMAT=TREE
+SELECT b.id, b.name, b.budget,
+  (SELECT COALESCE(SUM(p.discount),0) FROM payment p
+    WHERE p.benefit_id = b.id AND p.refunded = 0) AS consumed
+FROM benefit b\G"
+```
+
+`dependent`가 보이면 혜택마다 결제 테이블을 다시 훑고 있다는 뜻이다.
+
+### 4. 테스트
+
+```bash
+npx vitest run modules/nested-loop-aggregation
+```
+
+### 정리
+
+```bash
+npm run db:down
+```
