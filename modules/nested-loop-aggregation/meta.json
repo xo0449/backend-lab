@@ -1,0 +1,14 @@
+{
+  "slug": "nested-loop-aggregation",
+  "type": "experiment",
+  "title": "현황 화면 집계가 12억 행을 읽던 문제",
+  "summary": "혜택별 소진액을 상관 서브쿼리로 실시간 집계하다 결제 테이블을 혜택 수만큼 훑었다. 파생테이블 실체화와 커버링 인덱스로 5,600배 줄였다.",
+  "tags": ["mysql", "실행계획", "인덱스", "성능", "캐시"],
+  "question": "읽는 행을 줄이면 항상 빨라지는가",
+  "metrics": [
+    { "label": "읽은 행", "before": "1,200,006,003", "after": "136,589" },
+    { "label": "실행 시간", "before": "118,888ms", "after": "21ms" },
+    { "label": "동시 8요청 시 DB 조회", "before": "8회", "after": "1회" }
+  ],
+  "createdAt": "2026-09-15"
+}
