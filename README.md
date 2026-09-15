@@ -12,6 +12,8 @@
 |---|---|---|
 | [현황 화면 집계가 12억 행을 읽던 문제](modules/nested-loop-aggregation) | 실험 | 읽는 행을 줄이면 항상 빨라지는가 |
 | [다중 인스턴스에서 크론이 중복 실행되는 문제](modules/cron-duplicate-execution) | 실험 | 왜 유니크 제약이나 분산 락이 아니라 DB 네임드 락인가 |
+| [이벤트 수집 파이프라인](modules/event-collector) | 구현 | 이벤트 유실과 중복 중 무엇을 먼저 포기할 것인가 |
+| [이벤트 SDK](modules/event-sdk) | 구현 | 분석 코드가 서비스를 내리지 않게 하려면 무엇을 포기해야 하는가 |
 
 ## 실행
 
@@ -21,7 +23,8 @@ npm run db:up
 npm test
 ```
 
-각 모듈의 측정을 재현하려면 해당 폴더의 README를 참고하세요.
+MySQL과 MinIO가 Docker로 뜹니다. 각 모듈의 측정을 재현하려면
+해당 폴더의 README를 참고하세요.
 
 ## 구조
 
