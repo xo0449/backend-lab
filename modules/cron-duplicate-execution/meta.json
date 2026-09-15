@@ -1,0 +1,14 @@
+{
+  "slug": "cron-duplicate-execution",
+  "type": "experiment",
+  "title": "다중 인스턴스에서 크론이 중복 실행되는 문제",
+  "summary": "인스턴스가 여러 개면 같은 배치가 동시에 돌아 같은 행을 중복 삽입한다. MySQL 네임드 락으로 직렬화했다.",
+  "tags": ["mysql", "동시성", "배치", "락"],
+  "question": "인스턴스 간 배치 중복 실행을 막을 때 왜 유니크 제약이나 분산 락이 아니라 DB 네임드 락인가",
+  "metrics": [
+    { "label": "중복 행", "before": "4500", "after": "0" },
+    { "label": "실제 삽입한 워커", "before": "4", "after": "1" },
+    { "label": "총 행 수", "before": "6000", "after": "1500" }
+  ],
+  "createdAt": "2026-09-15"
+}
