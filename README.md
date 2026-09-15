@@ -16,6 +16,7 @@
 | [다중 인스턴스에서 크론이 중복 실행되는 문제](modules/cron-duplicate-execution) | 실험 | 왜 유니크 제약이나 분산 락이 아니라 DB 네임드 락인가 |
 | [이벤트 수집 파이프라인](modules/event-collector) | 구현 | 이벤트 유실과 중복 중 무엇을 먼저 포기할 것인가 |
 | [이벤트 SDK](modules/event-sdk) | 구현 | 분석 코드가 서비스를 내리지 않게 하려면 무엇을 포기해야 하는가 |
+| [switch로 범벅된 버전 분기를 표로 옮기기](modules/version-dispatch) | 실험 | 분기를 코드에서 데이터로 옮기면 무엇이 달라지는가 |
 
 ## 실행
 
