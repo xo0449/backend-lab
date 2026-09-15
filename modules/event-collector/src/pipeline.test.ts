@@ -85,13 +85,17 @@ describe('버퍼', () => {
 
 describe('적재', () => {
   it('같은 파일을 두 번 적재해도 행 수가 같다', async () => {
+    // 버킷이 테스트 사이에 남는다. 이번에 새로 생긴 키만 읽는다.
+    const before = new Set(await listKeys(s3))
+
     const buffer = new EventBuffer(createS3Sink(s3), { maxEvents: 5 })
     const collect = createCollector(buffer)
     collect(Array.from({ length: 5 }, () => event()))
     await buffer.flush()
 
-    const keys = await listKeys(s3)
-    const events = await readEvents(s3, keys[keys.length - 1])
+    const fresh = (await listKeys(s3)).filter((k) => !before.has(k))
+    expect(fresh).toHaveLength(1)
+    const events = await readEvents(s3, fresh[0])
 
     const conn = await openWarehouse()
     await loadEvents(conn, events)

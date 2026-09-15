@@ -6,6 +6,8 @@ services:
       MYSQL_DATABASE: lab
     ports:
       - "3307:3306"
+    volumes:
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
     command:
       - --innodb-buffer-pool-size=128M
       - --slow-query-log=1

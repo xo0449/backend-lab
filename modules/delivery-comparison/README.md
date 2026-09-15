@@ -54,6 +54,7 @@ npx tsx modules/delivery-comparison/bench/run.ts
 
 MySQL은 binlog를 ROW 포맷으로 쓰고 있고, 카프카는 KRaft 모드로 뜬다.
 리더는 복제 권한을 가진 별도 계정으로 붙는다.
+그 계정은 `docker/mysql-init/`의 SQL이 컨테이너 생성 시 만든다.
 
 ## 시나리오 1. 커밋 직후 프로세스가 죽는다
 
@@ -259,13 +260,13 @@ npm run db:up
 
 MySQL, Redis, 카프카가 뜬다. 카프카는 처음 받을 때 시간이 좀 걸린다.
 
-binlog를 읽으려면 복제 권한 계정이 필요하다. 한 번만 만들면 된다.
+binlog를 읽는 복제 계정은 컨테이너를 처음 만들 때 자동으로 생긴다.
+`docker/mysql-init/`에 있는 SQL이 그 일을 한다. 따로 할 것이 없다.
+
+계정이 살아 있는지 확인하려면 이렇게 한다.
 
 ```bash
-docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -uroot -plab -e "
-CREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED WITH mysql_native_password BY 'repl';
-GRANT REPLICATION SLAVE, REPLICATION CLIENT, SELECT ON *.* TO 'repl'@'%';
-FLUSH PRIVILEGES;"
+docker exec backend-lab-mysql-1 mysql -h127.0.0.1 -urepl -prepl -e "SELECT 1;"
 ```
 
 ### 1. 네 시나리오 전부 돌리기
