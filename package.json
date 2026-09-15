@@ -14,7 +14,8 @@
     "lab:collector": "tsx modules/event-collector/bench/schema-change.ts",
     "lab:sdk": "tsx modules/event-sdk/bench/run.ts",
     "lab:outbox": "tsx modules/outbox-vs-direct/bench/run.ts",
-    "lab:delivery": "tsx modules/delivery-comparison/bench/run.ts"
+    "lab:delivery": "tsx modules/delivery-comparison/bench/run.ts",
+    "lab:sharing": "tsx modules/shared-code-strategies/bench/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1132.0",
