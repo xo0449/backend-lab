@@ -18,6 +18,7 @@
 | [이벤트 SDK](modules/event-sdk) | 구현 | 분석 코드가 서비스를 내리지 않게 하려면 무엇을 포기해야 하는가 |
 | [switch로 범벅된 버전 분기를 표로 옮기기](modules/version-dispatch) | 실험 | 분기를 코드에서 데이터로 옮기면 무엇이 달라지는가 |
 | [트랜잭션 안에서 외부 서버를 부르면 생기는 일](modules/outbox-vs-direct) | 실험 | 외부 호출을 트랜잭션 밖으로 밀어내면 무엇을 얻고 무엇을 떠안는가 |
+| [아웃박스, CDC, 카프카로 이벤트를 전달하는 세 가지 방법](modules/delivery-comparison) | 실험 | 재시도와 유실 관점에서 세 방식은 무엇이 다른가 |
 
 ## 실행
 
@@ -27,7 +28,7 @@ npm run db:up
 npm test
 ```
 
-MySQL, Redis, MinIO가 Docker로 뜹니다. 각 모듈의 측정을 재현하려면
+MySQL, Redis, MinIO, 카프카가 Docker로 뜹니다. 각 모듈의 측정을 재현하려면
 해당 폴더의 README를 참고하세요.
 
 ## 구조

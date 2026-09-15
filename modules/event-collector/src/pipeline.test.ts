@@ -104,3 +104,22 @@ describe('적재', () => {
     expect(second).toBe(first)
   }, 30_000)
 })
+
+describe('적재 건수', () => {
+  it('중복을 건너뛴 만큼 빼고 센다', async () => {
+    // 버킷이 테스트 사이에 남는다. 이번에 새로 생긴 키만 읽는다.
+    const before = new Set(await listKeys(s3))
+
+    const buffer = new EventBuffer(createS3Sink(s3), { maxEvents: 3 })
+    createCollector(buffer)(Array.from({ length: 3 }, () => event()))
+    await buffer.flush()
+
+    const fresh = (await listKeys(s3)).filter((k) => !before.has(k))
+    expect(fresh).toHaveLength(1)
+    const events = await readEvents(s3, fresh[0])
+
+    const conn = await openWarehouse()
+    expect((await loadEvents(conn, events)).inserted).toBe(3)
+    expect((await loadEvents(conn, events)).inserted).toBe(0)
+  }, 30_000)
+})

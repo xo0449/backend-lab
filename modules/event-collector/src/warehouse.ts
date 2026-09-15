@@ -32,15 +32,15 @@ export async function loadEvents(
   conn: DuckDBConnection,
   events: StoredEvent[],
 ): Promise<{ inserted: number }> {
-  let inserted = 0
+  const before = await countEvents(conn)
   for (const e of events) {
-    const result = await conn.run(
+    await conn.run(
       `INSERT INTO event VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
       [e.eventId, e.name, e.occurredAt, e.receivedAt, e.schemaVersion, JSON.stringify(e.payload)],
     )
-    inserted += Number(result.getRowsChanged?.() ?? 0)
   }
-  return { inserted }
+  // 드라이버가 INSERT의 변경 행 수를 주지 않는다. 전후 건수 차이로 센다.
+  return { inserted: (await countEvents(conn)) - before }
 }
 
 export async function countEvents(conn: DuckDBConnection): Promise<number> {
