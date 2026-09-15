@@ -92,6 +92,23 @@ LEFT JOIN (
 그래서 한 번만 돌고 결과가 임시 테이블로 남는다.
 결제 테이블을 1,500번이 아니라 한 번 훑는다.
 
+```mermaid
+flowchart TD
+    subgraph before["개선 전: 상관 서브쿼리"]
+        B1["benefit 한 행을 읽는다"] --> B2["payment 798,375행 전체 스캔"]
+        B2 --> B3["discount 합계"]
+        B3 --> B4{"남은 혜택이 있나"}
+        B4 -->|"있다"| B1
+        B4 -->|"없다"| B5["스캔 1,500회, 약 12억 행"]
+    end
+    subgraph after["개선 후: 파생테이블 실체화"]
+        A1["payment 전체 스캔 1회"] --> A2["benefit_id로 GROUP BY"]
+        A2 --> A3["임시 테이블로 실체화"]
+        A3 --> A4["benefit과 LEFT JOIN 1회"]
+        A4 --> A5["스캔 1회, 157만 행"]
+    end
+```
+
 12억 행에서 157만 행으로 줄었다. 118초가 164ms가 됐다.
 **이 한 단계가 전체 개선의 대부분이다.**
 
@@ -154,6 +171,25 @@ CREATE INDEX idx_payment_covering
 **3단계와 4단계의 차이가 랜덤 접근 비용 그 자체다.**
 같은 행 수, 같은 쿼리, 인덱스 구성만 다르다.
 
+```mermaid
+flowchart LR
+    Q["같은 쿼리, 같은 13.6만 행"]
+    subgraph s3["3단계: 기간 인덱스"]
+        I3["idx_payment_paid_at_refunded"] --> R3["대상 행 탐색"]
+        R3 --> M3["discount가 인덱스에 없다"]
+        M3 --> RA["테이블로 랜덤 접근 6만 6천 회"]
+        RA --> E3["123ms"]
+    end
+    subgraph s4["4단계: 커버링 인덱스"]
+        I4["idx_payment_covering"] --> R4["대상 행 탐색"]
+        R4 --> M4["discount가 인덱스에 있다"]
+        M4 --> E4["테이블 접근 없이 끝난다"]
+        E4 --> T4["21ms"]
+    end
+    Q --> I3
+    Q --> I4
+```
+
 공짜는 아니다. 인덱스가 커지고 쓰기가 느려진다.
 결제는 읽기보다 쓰기가 잦은 테이블이라 이건 실제 비용이다.
 읽기 한 화면을 위해 쓰기 전체를 느리게 만드는 게 맞는지는
@@ -179,6 +215,24 @@ async get(load: () => Promise<T>): Promise<T> {
 ```
 
 동시 요청 8건에 DB 조회는 1회다.
+
+```mermaid
+sequenceDiagram
+    participant R1 as 첫 요청
+    participant RN as 뒤따라온 요청 7건
+    participant C as 1분 캐시
+    participant D as DB
+
+    R1->>C: 집계 요청
+    C->>C: 캐시도 없고 진행 중인 작업도 없다
+    C->>D: 집계 쿼리 1회
+    RN->>C: 집계 요청
+    C-->>RN: 진행 중인 작업을 그대로 넘긴다
+    D-->>C: 결과
+    C-->>R1: 결과
+    C-->>RN: 같은 결과
+    Note over C,D: 동시 요청 8건, DB 조회 1회
+```
 
 1분이라는 값은 타협이다. 이 화면은 예산 소진을 보는 용도라 1분 전 숫자로도
 판단이 바뀌지 않는다. 실시간이어야 하는 화면이었다면 이 단계를 못 넣는다.

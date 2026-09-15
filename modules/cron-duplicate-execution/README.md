@@ -51,6 +51,30 @@ npx tsx modules/cron-duplicate-execution/bench/run.ts
 
 네 워커가 각각 1,500건을 넣었다. 실제로 필요한 건 1,500건이다.
 
+```mermaid
+sequenceDiagram
+    participant W1 as 워커 1
+    participant W2 as 워커 2
+    participant W3 as 워커 3
+    participant W4 as 워커 4
+    participant D as DB
+
+    W1->>D: 이미 있는지 확인
+    W2->>D: 이미 있는지 확인
+    W3->>D: 이미 있는지 확인
+    W4->>D: 이미 있는지 확인
+    D-->>W1: 없다
+    D-->>W2: 없다
+    D-->>W3: 없다
+    D-->>W4: 없다
+    Note over W1,D: 확인과 삽입 사이의 틈. 넷 다 같은 스냅샷을 본다
+    W1->>D: INSERT 1,500건
+    W2->>D: INSERT 1,500건
+    W3->>D: INSERT 1,500건
+    W4->>D: INSERT 1,500건
+    Note over W1,D: 총 6,000행, 중복 4,500행
+```
+
 재현에 한 가지 장치를 넣었다. 계산 구간에 200ms 지연을 뒀다.
 
 ```typescript
@@ -109,6 +133,15 @@ Redis 락은 만료 시간을 정해야 한다는 부담도 있다.
 고른 방법이다. 이미 있는 것으로 풀리고, 만료 시간을 정할 필요가 없다.
 커넥션이 끊기면 자동으로 풀리므로 인스턴스가 죽어도 교착이 없다.
 
+네 가지를 한자리에 놓으면 이렇다.
+
+| 방법 | 막는 것 | 안 막는 것 | 새로 지는 부담 |
+|---|---|---|---|
+| 유니크 제약 | 중복 행 | 배치가 네 번 도는 것, 전체 스캔 네 번 | 삽입 실패를 무시할지 재시도할지 정해야 한다. 자정마다 오류가 세 번 찍혀 진짜 오류와 섞인다 |
+| Redis 분산 락 | 동시 실행 | 크론이 프로세스마다 등록되는 구조 | 의존성이 하나 늘어난다. 만료 시간을 정해야 하는데 짧으면 배치 중에 풀리고 길면 다음 회차까지 막힌다 |
+| 리더 선출 | 중복 실행 자체. 스케줄러가 한 인스턴스에서만 돈다 | 없다. 원인을 없앤다 | 선출 자체가 또 하나의 분산 문제다. 배치 하나 때문에 도입할 크기가 아니다 |
+| MySQL 네임드 락 | 동시 실행 | 실행의 완결성, 크론이 프로세스마다 등록되는 구조 | 획득부터 해제까지 같은 커넥션을 유지해야 한다. 배치가 여러 개가 되면 락 이름 설계가 따라온다 |
+
 ## 고친 코드
 
 ```typescript
@@ -143,6 +176,22 @@ MODE=lock npx tsx modules/cron-duplicate-execution/bench/run.ts
 }
 ```
 
+```mermaid
+sequenceDiagram
+    participant W1 as 워커 1
+    participant WN as 워커 2, 3, 4
+    participant D as DB
+
+    W1->>D: GET_LOCK 시도, 대기 없음
+    D-->>W1: 1
+    WN->>D: GET_LOCK 시도, 대기 없음
+    D-->>WN: 0
+    WN->>WN: skipped로 즉시 종료
+    W1->>D: 확인 후 INSERT 1,500건
+    W1->>D: RELEASE_LOCK
+    Note over W1,D: 총 1,500행, 중복 0
+```
+
 ### 왜 같은 커넥션이어야 하는가
 
 네임드 락은 커넥션 단위다. 이게 가장 걸리기 쉬운 부분이다.
@@ -153,6 +202,22 @@ MODE=lock npx tsx modules/cron-duplicate-execution/bench/run.ts
 
 다음 회차부터 아무도 락을 못 잡는다. 배치가 조용히 멈춘다.
 중복 삽입보다 알아채기 어려운 고장이다.
+
+```mermaid
+flowchart TD
+    S["배치 시작"] --> G{"커넥션을 어떻게 잡았나"}
+    G -->|"쿼리마다 풀에서 꺼낸다"| P1["A 커넥션에서 GET_LOCK 성공"]
+    P1 --> P2["작업 수행"]
+    P2 --> P3["B 커넥션에서 RELEASE_LOCK"]
+    P3 --> P4["0을 반환한다. 오류는 나지 않는다"]
+    P4 --> P5["A 커넥션의 락이 그대로 남는다"]
+    P5 --> P6["다음 회차부터 아무도 락을 못 잡는다"]
+    P6 --> P7["배치가 조용히 멈춘다"]
+    G -->|"getConnection으로 하나를 잡는다"| C1["같은 커넥션에서 GET_LOCK 성공"]
+    C1 --> C2["작업 수행"]
+    C2 --> C3["finally에서 같은 커넥션으로 RELEASE_LOCK"]
+    C3 --> C4["락이 풀린다. 다음 회차도 정상"]
+```
 
 그래서 `getConnection()`으로 하나를 잡고 획득부터 해제까지 유지한다.
 해제는 `finally`에 둔다. 예외가 나도 락이 남지 않아야 한다.
