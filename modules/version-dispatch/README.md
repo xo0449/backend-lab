@@ -44,6 +44,16 @@ case 'biometricLogin':
 QA가 3.4 사내 빌드로 시나리오를 돌려야 한다.
 정식 개시 버전은 3.5로 이미 공지돼서 당길 수 없다.
 
+```mermaid
+timeline
+    title 조건이 쌓인 순서
+    darkMode : 2.9 부터 : 플랫폼 구분 없음
+    pushRichMedia : ios 3.0 : android 4.0 : 플랫폼 분기 등장
+    biometricLogin : ios 3.2 : android 3.5 : 같은 모양 반복
+    요청 하나 : android internal 3.4 : 채널 조건이 끼어든다
+    inAppPurchase : 4.0 : beta 3.8 : 선행 개시를 다시 구현
+```
+
 ### 그 한 줄의 합리성
 
 개발자는 `case 'biometricLogin'`의 안드로이드 블록에 한 줄을 넣는다.
@@ -246,6 +256,29 @@ if (major === 3 && minor >= 2) return true
 
 ## 전수 비교
 
+### 찾는 방식이 달라진다
+
+```mermaid
+flowchart TD
+    subgraph N["개선 전: 조건을 타고 내려간다"]
+        N1["기능으로 switch"] --> N2["플랫폼으로 if"]
+        N2 --> N3["채널로 if"]
+        N3 --> N4["major와 minor 비교"]
+        N4 --> N5["true 또는 false"]
+    end
+
+    subgraph T["개선 후: 표를 조회한다"]
+        T1["기능으로 표 조회"] --> T2{"선행 채널인가"}
+        T2 -->|"맞다"| T3["earlyAccess.since 비교"]
+        T2 -->|"아니다"| T4["since 비교"]
+        T3 --> T5["Version.gte"]
+        T4 --> T5
+    end
+```
+
+개선 전에는 기능마다 경로의 모양이 다르다. 그래서 기능마다 다르게 틀릴 수 있다.
+개선 후에는 경로가 하나다. 틀린다면 표의 값이 틀린 것이고, 값은 눈으로 본다.
+
 ### 읽기로는 못 찾는 이유
 
 틀린 동작이 있는지부터 확인해야 했다. 처음에는 코드를 읽어서 찾으려 했다.
@@ -266,6 +299,17 @@ if (major === 3 && minor >= 2) return true
 입력 공간이 작다는 것이 이 방법을 가능하게 했다.
 플랫폼 3개, 채널 3개, 버전 10개, 기능 5개다.
 곱하면 450이다. 샘플링도 속성 기반 생성도 필요 없다.
+
+```mermaid
+flowchart LR
+    G["조합 450개 생성"] --> A["supportsNaive 실행"]
+    G --> B["표 기준 supports 실행"]
+    A --> D{"결과가 같은가"}
+    B --> D
+    D -->|"같다"| OK["447개"]
+    D -->|"다르다"| DIFF["3개"]
+    DIFF --> I["전부 선행 채널 조합이었다"]
+```
 전부 돌려서 전부 비교하면 된다.
 
 버전 10개는 아무 값이나 고른 것이 아니다.

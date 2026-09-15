@@ -133,3 +133,15 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
 .readme blockquote { border-left: 2px solid var(--line); margin-left: 0; padding-left: 1rem; color: var(--muted); }
 
 .back { color: var(--muted); text-decoration: none; font-size: 0.88rem; }
+
+.diagram {
+  margin: 1.8rem 0;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  overflow-x: auto;
+  text-align: center;
+}
+
+.diagram svg { max-width: 100%; height: auto; }

@@ -17,6 +17,23 @@ await conn.commit()
 읽기 쉽다. 순서도 맞다. 주문을 넣고 알린다.
 단위 테스트도 통과한다. 수신자가 살아 있고 빠르면 아무 문제가 없다.
 
+```mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant A as 주문 서버
+    participant D as DB
+    participant E as 외부 서버
+
+    C->>A: 주문 요청
+    A->>D: BEGIN
+    A->>D: INSERT order
+    A->>E: POST /events
+    Note over A,E: 트랜잭션이 열린 채로 기다린다
+    E-->>A: 200 OK
+    A->>D: COMMIT
+    A-->>C: 완료
+```
+
 문제는 수신자가 항상 살아 있지는 않다는 것이다.
 그리고 우리 트랜잭션은 그동안 열려 있다.
 
@@ -76,6 +93,31 @@ MySQL, Redis, 가짜 수신자가 전부 로컬에서 돈다.
 
 아웃박스는 이런 상태가 만들어지지 않는다. 주문과 이벤트 기록이
 같은 트랜잭션에 있다. 같이 커밋되거나 같이 사라진다.
+
+```mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant A as 주문 서버
+    participant D as DB
+    participant Q as 큐
+    participant W as 워커
+    participant E as 외부 서버
+
+    C->>A: 주문 요청
+    A->>D: BEGIN
+    A->>D: INSERT order
+    A->>D: INSERT event_outbox (PENDING)
+    A->>D: COMMIT
+    A-->>C: 완료
+    Note over A,C: 여기서 응답이 끝난다
+
+    A->>Q: enqueue (jobId = outbox-PK)
+    A->>D: UPDATE status = ENQUEUED
+    Q->>W: 잡 전달
+    W->>E: POST /events
+    E-->>W: 200 OK
+    W->>D: UPDATE status = COMPLETED
+```
 
 ## 시나리오 2. 수신자가 죽어 있는 동안 주문이 들어왔다
 
@@ -175,6 +217,29 @@ UPDATE event_outbox SET status = 'ENQUEUED'
 
 완료와 실패는 종결 상태로 두고 다시 바뀌지 않게 했다.
 
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: 비즈니스 트랜잭션에서 INSERT
+    PENDING --> ENQUEUED: 큐 적재 성공
+    PENDING --> ENQUEUED: 스위퍼가 재발행
+    ENQUEUED --> COMPLETED: 워커 전송 성공
+    ENQUEUED --> FAILED: 재시도 소진 또는 영구 거부
+    COMPLETED --> [*]
+    FAILED --> [*]
+
+    note right of PENDING
+        5분 넘게 남으면
+        스위퍼가 줍는다
+    end note
+    note right of FAILED
+        종결 상태다
+        되돌아가지 않는다
+    end note
+```
+
+스위퍼가 줍는 것은 `PENDING`뿐이다. `ENQUEUED`에서 멈춘 행은
+자동 복구 경로가 없다. 그래서 그 개수를 따로 봐야 한다.
+
 ### 재시도를 한 곳만 갖는다
 
 HTTP 클라이언트에도 재시도가 있고 큐에도 재시도가 있으면
@@ -253,6 +318,17 @@ export const EVENT_DEFS = {
 새 이벤트를 추가할 때 고치는 곳이 이 표 하나다.
 발행 쪽과 소비 쪽에 각각 상수를 두면 둘이 갈라진다.
 갈라진 것을 발견하는 시점은 대개 잡이 엉뚱한 큐에 쌓인 뒤다.
+
+```mermaid
+flowchart LR
+    DEF["EVENT_DEFS<br/>이벤트 정의 한 곳"]
+    DEF --> P["발행 권한"]
+    DEF --> Q["전용 큐 이름"]
+    DEF --> C["소비 앱 하나"]
+    DEF --> K["멱등키 규약"]
+    DEF --> V["부팅 시 검증"]
+    V -.어긋나면.-> F["배포 실패"]
+```
 
 ### 소비 앱을 하나로 강제한다
 
@@ -382,6 +458,33 @@ Redis 하나 띄우는 것과 비교할 일이 아니다.
 **언제 갈아탈 만한가.** 순서 보장이 실제로 필요해졌을 때,
 또는 한 이벤트를 여러 소비자가 각자 읽어야 할 때다.
 "카프카가 더 좋으니까"는 이유가 아니다.
+
+### 세 방식이 다른 지점
+
+```mermaid
+flowchart TD
+    subgraph A["지금: 앱이 발행"]
+        A1["트랜잭션 커밋"] --> A2["앱이 큐에 적재"]
+        A2 -.빠지면.-> A3["PENDING 잔류"]
+        A3 --> A4["스위퍼가 복구"]
+    end
+
+    subgraph B["CDC: 변경 로그를 읽음"]
+        B1["트랜잭션 커밋"] --> B2["binlog에 기록"]
+        B2 --> B3["리더가 감지"]
+        B3 --> B4["큐에 적재"]
+    end
+
+    subgraph C["카프카: 로그가 곧 저장소"]
+        C1["트랜잭션 커밋"] --> C2["아웃박스 기록"]
+        C2 --> C3["토픽에 발행"]
+        C3 --> C4["컨슈머 그룹마다 각자 읽음"]
+    end
+```
+
+**앱이 발행할 때 적재가 빠지는 구간이, CDC에서는 구조적으로 사라진다.**
+행이 커밋됐다면 로그에 있고, 로그에 있으면 읽힌다.
+카프카는 발행 이후의 이야기라 커밋과 발행 사이의 틈은 그대로 남는다.
 
 ### 정리
 
