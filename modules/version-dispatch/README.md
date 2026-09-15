@@ -66,16 +66,13 @@ Version.parse('3.10.0').gte(Version.parse('3.9.0'))  // true
 npx tsx modules/version-dispatch/bench/diff.ts
 ```
 
-```
-조합 450개 중 3개가 다르다
+조합 450개 중 3개가 달랐다.
 
-## biometricLogin (1건)
-  android / beta / 3.4.0      개선 전 false → 표 기준 true
-
-## inAppPurchase (2건)
-  ios / internal / 3.8.0      개선 전 false → 표 기준 true
-  android / internal / 3.8.0  개선 전 false → 표 기준 true
-```
+| 기능 | 플랫폼 | 채널 | 버전 | 개선 전 | 표 기준 |
+|---|---|---|---|:-:|:-:|
+| biometricLogin | android | beta | 3.4.0 | 닫힘 | 열림 |
+| inAppPurchase | ios | internal | 3.8.0 | 닫힘 | 열림 |
+| inAppPurchase | android | internal | 3.8.0 | 닫힘 | 열림 |
 
 **셋 다 같은 종류의 실수다.** 선행 채널에 먼저 열어주는 정책인데,
 한 곳은 `internal`만 열고 `beta`를 빠뜨렸고, 다른 곳은 `beta`만 열고
@@ -85,6 +82,21 @@ npx tsx modules/version-dispatch/bench/diff.ts
 코드를 읽어서는 알아채기 어렵다. 각각을 따로 보면 둘 다 말이 되기 때문이다.
 
 정책을 한 표에 모으니 빠진 칸이 바로 보였다.
+
+표로 옮기고 나니 왜 빠졌는지도 보인다.
+
+| 기능 | 정식 개시 | 선행 채널 개시 | 개선 전 코드가 열어준 채널 |
+|---|---|---|---|
+| biometricLogin (ios) | 3.2.0 | 3.2.0 | 해당 없음 |
+| biometricLogin (android) | 3.5.0 | 3.4.0 | internal만 |
+| inAppPurchase | 4.0.0 | 3.8.0 | beta만 |
+| offlineCart | 5.0.0 | 4.7.0 | beta, internal |
+| pushRichMedia | ios 3.0.0 / android 4.0.0 | 없음 | 해당 없음 |
+| darkMode | 2.9.0 | 없음 | 해당 없음 |
+
+오른쪽 칸이 들쭉날쭉하다. 같은 "선행 채널 조기 개시"인데 어떤 기능은
+`internal`만, 어떤 기능은 `beta`만, 어떤 기능은 둘 다 열려 있었다.
+정책이 아니라 요청이 들어온 순서가 남은 것이다.
 
 ## 결과 2. 고칠 곳이 줄었다
 
@@ -100,6 +112,21 @@ npx tsx modules/version-dispatch/bench/diff.ts
 
 표에서는 각 기능의 `since`에 한 줄씩 더하면 된다. 빠뜨리면
 "이 플랫폼은 지원 안 함"이 되는데, 표를 보면 빈 칸이 눈에 띈다.
+
+## 옮기고 난 정책 표
+
+리팩터링 결과물은 이 표 하나다. 코드가 아니라 이걸 읽으면 된다.
+
+| 기능 | iOS | Android | Web | 선행 채널 |
+|---|---|---|---|---|
+| biometricLogin | 3.2.0 | 3.5.0 | 미지원 | ios 3.2.0 / android 3.4.0 |
+| inAppPurchase | 4.0.0 | 4.0.0 | 미지원 | 3.8.0 |
+| pushRichMedia | 3.0.0 | 4.0.0 | 미지원 | 없음 |
+| darkMode | 2.9.0 | 2.9.0 | 2.9.0 | 없음 |
+| offlineCart | 5.0.0 | 5.0.0 | 미지원 | 4.7.0 |
+
+빈 칸이 곧 "지원 안 함"이다. 새 플랫폼이 생기면 열이 하나 늘고,
+채우지 않은 칸은 눈에 띈다. 코드였다면 그냥 없는 분기였을 뿐이다.
 
 ## 정책을 테스트로 고정할 수 있게 됐다
 
