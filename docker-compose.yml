@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0.39
+    environment:
+      MYSQL_ROOT_PASSWORD: lab
+      MYSQL_DATABASE: lab
+    ports:
+      - "3307:3306"
+    command:
+      - --innodb-buffer-pool-size=128M
+      - --slow-query-log=1
+      - --long-query-time=1
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-plab"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
