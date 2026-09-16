@@ -215,7 +215,7 @@ flowchart TD
     P6 --> P7["배치가 조용히 멈춘다"]
     G -->|"getConnection으로 하나를 잡는다"| C1["같은 커넥션에서 GET_LOCK 성공"]
     C1 --> C2["작업 수행"]
-    C2 --> C3["finally에서 같은 커넥션으로 RELEASE_LOCK"]
+    C2 --> C3["finally에서 같은 커넥션으로<br/>RELEASE_LOCK"]
     C3 --> C4["락이 풀린다. 다음 회차도 정상"]
 ```
 

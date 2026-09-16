@@ -82,3 +82,29 @@ npm run lab:cron
 깃허브가 자체 렌더링하고, 사이트는 `web/app/mermaid.tsx`가 처리합니다.
 
 모듈당 2~4개가 적당합니다. 많으면 오히려 안 읽힙니다.
+
+### 한글 라벨 주의
+
+머메이드는 텍스트 폭을 라틴 문자 기준으로 계산합니다.
+그래서 한글 라벨이 길면 상자 밖으로 잘립니다.
+
+이 저장소는 두 가지로 대응합니다.
+
+- `web/app/mermaid.tsx`에서 `securityLevel`을 `antiscript`로 두고
+  `htmlLabels`를 켭니다. 브라우저가 직접 배치하므로 잘리지 않습니다
+- `wrappingWidth`를 320으로 올립니다. 기본값 200은 단어 중간을 끊습니다
+
+그래도 **라벨은 짧게 씁니다. 20자를 넘기지 않습니다.**
+길어야 한다면 `<br/>`로 끊을 자리를 직접 정합니다.
+자동 줄바꿈에 맡기면 어디서 끊길지 알 수 없습니다.
+
+넘침을 확인하는 방법이 있습니다. 브라우저 콘솔에서 이걸 돌립니다.
+
+```javascript
+document.querySelectorAll('figure.diagram svg foreignObject').forEach(fo => {
+  const div = fo.querySelector('div')
+  if (div && div.scrollWidth > fo.width.baseVal.value + 2) console.warn(div.textContent)
+})
+```
+
+경고가 하나도 안 나와야 합니다.

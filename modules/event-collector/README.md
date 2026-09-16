@@ -80,7 +80,7 @@ flowchart LR
     end
 
     B --> O
-    D["중복 제거는 여기서 한다. eventId 기준이다"] -.- L
+    D["중복 제거는 여기서<br/>eventId 기준"] -.- L
 ```
 
 ## 결정과 이유
