@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import './globals.css'
-import { loadModules } from '../lib/modules'
 import Shell from './shell'
 
 export const viewport = { colorScheme: 'light' as const }
@@ -12,12 +11,6 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const items = loadModules().map((m) => ({
-    slug: m.meta.slug,
-    title: m.meta.title,
-    type: m.meta.type,
-  }))
-
   return (
     <html lang="ko">
       <body>
@@ -32,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         </div>
 
-        <Shell items={items}>{children}</Shell>
+        <Shell>{children}</Shell>
       </body>
     </html>
   )
