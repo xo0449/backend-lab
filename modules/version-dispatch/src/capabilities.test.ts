@@ -41,6 +41,27 @@ describe('Version', () => {
   })
 })
 
+describe('patch 자리까지 적는 기준', () => {
+  it('4.0.1을 기준으로 두면 4.0.0은 막고 4.0.1부터 연다', () => {
+    const min = Version.parse('4.0.1')
+    expect(Version.parse('4.0.0').gte(min)).toBe(false)
+    expect(Version.parse('4.0.1').gte(min)).toBe(true)
+    expect(Version.parse('4.0.2').gte(min)).toBe(true)
+    expect(Version.parse('4.1.0').gte(min)).toBe(true)
+    expect(Version.parse('3.9.9').gte(min)).toBe(false)
+  })
+
+  it('개선 전 코드는 patch를 읽지 않아 이 기준을 표현할 수 없다', () => {
+    // naive는 major와 minor만 꺼낸다. 4.0.0과 4.0.9가 같은 값이다.
+    const at = (appVersion: string): Client =>
+      ({ platform: 'ios', appVersion, channel: 'production' })
+
+    expect(supportsNaive(at('4.0.0'), 'inAppPurchase')).toBe(true)
+    expect(supportsNaive(at('4.0.9'), 'inAppPurchase')).toBe(true)
+    // 4.0.1부터 열고 싶어도 4.0.0을 막을 방법이 없다.
+  })
+})
+
 describe('선행 채널', () => {
   it('베타와 내부가 같은 시점에 받는다', () => {
     for (const feature of FEATURES) {
