@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export interface SidebarItem {
   slug: string
@@ -19,6 +19,25 @@ export interface SidebarItem {
 export default function Sidebar({ items }: { items: SidebarItem[] }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const boxRef = useRef<HTMLElement>(null)
+
+  // 모듈이 늘어 목록이 화면보다 길어지면 현재 항목이 스크롤 밖에 있을 수 있다.
+  useEffect(() => {
+    const box = boxRef.current
+    const current = box?.querySelector<HTMLElement>('.nav-item[data-active="true"]')
+    if (!box || !current) return
+
+    // offsetTop이 아니라 화면 좌표로 잰다. 패널이 sticky라 기준점이 다르다.
+    const boxRect = box.getBoundingClientRect()
+    const elRect = current.getBoundingClientRect()
+    const pad = 16
+
+    if (elRect.top < boxRect.top + pad) {
+      box.scrollTop += elRect.top - boxRect.top - pad
+    } else if (elRect.bottom > boxRect.bottom - pad) {
+      box.scrollTop += elRect.bottom - boxRect.bottom + pad
+    }
+  }, [pathname])
 
   return (
     <>
@@ -30,7 +49,7 @@ export default function Sidebar({ items }: { items: SidebarItem[] }) {
         {open ? '닫기' : '모듈'}
       </button>
 
-      <aside className="nav" data-open={open}>
+      <aside className="nav" data-open={open} ref={boxRef}>
         <Link
           href="/"
           className="nav-item"

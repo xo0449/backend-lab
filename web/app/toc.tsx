@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 interface Heading {
   id: string
@@ -22,11 +23,40 @@ function slugify(text: string, index: number) {
  * 글이 길어져서 필요해진 기능이다. 500줄이 넘으면
  * 지금 어디쯤 읽고 있는지가 안 보인다.
  */
+
+/**
+ * 강조된 항목이 패널 스크롤 밖에 있으면 안으로 끌어온다.
+ *
+ * offsetTop으로 계산하면 안 된다. 패널이 position: sticky라
+ * 자기 자식의 offsetParent가 되어 기준점이 달라진다.
+ * 화면 좌표로 계산하면 그런 전제가 없다.
+ */
+function keepInView(box: HTMLElement | null, el: HTMLElement | null) {
+  if (!box || !el) return
+  const boxRect = box.getBoundingClientRect()
+  const elRect = el.getBoundingClientRect()
+  const pad = 12
+
+  if (elRect.top < boxRect.top + pad) {
+    box.scrollTop += elRect.top - boxRect.top - pad
+  } else if (elRect.bottom > boxRect.bottom - pad) {
+    box.scrollTop += elRect.bottom - boxRect.bottom + pad
+  }
+}
+
 export default function Toc() {
   const [headings, setHeadings] = useState<Heading[]>([])
   const [active, setActive] = useState<string>('')
+  const listRef = useRef<HTMLElement>(null)
+
+  // 페이지를 옮기면 본문이 통째로 바뀐다.
+  // 이 값이 빠져 있어서 이전 글의 목차가 그대로 남아 있었다.
+  const pathname = usePathname()
 
   useEffect(() => {
+    setHeadings([])
+    setActive('')
+
     const article = document.querySelector('.readme')
     if (!article) return
 
@@ -73,12 +103,12 @@ export default function Toc() {
       window.removeEventListener('resize', sync)
       resizeObserver.disconnect()
     }
-  }, [])
+  }, [pathname])
 
   if (headings.length === 0) return null
 
   return (
-    <nav className="toc" aria-label="목차">
+    <nav className="toc" aria-label="목차" ref={listRef}>
       <div className="toc-title">목차</div>
       {headings.map((h) => (
         <a
@@ -87,6 +117,10 @@ export default function Toc() {
           className="toc-item"
           data-level={h.level}
           data-active={active === h.id}
+          ref={(el) => {
+            // 목차가 길면 강조된 항목이 스크롤 밖으로 나간다.
+            if (active === h.id) keepInView(listRef.current, el)
+          }}
         >
           {h.text}
         </a>

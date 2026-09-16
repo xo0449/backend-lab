@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 
 /**
  * ```mermaid 코드 블록을 그림으로 바꾼다.
@@ -12,6 +13,9 @@ import { useEffect } from 'react'
  * 번들이 크기 때문에 필요한 페이지에서만 동적으로 가져온다.
  */
 export default function Mermaid() {
+  // 페이지를 옮기면 새 본문에 새 다이어그램이 들어온다.
+  const pathname = usePathname()
+
   useEffect(() => {
     const blocks = Array.from(
       document.querySelectorAll<HTMLElement>('pre > code.language-mermaid'),
@@ -59,7 +63,7 @@ export default function Mermaid() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [pathname])
 
   return null
 }
