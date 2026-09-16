@@ -28,10 +28,10 @@ export default function Mermaid() {
       const { default: mermaid } = await import('mermaid')
       if (cancelled) return
 
-      const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
       mermaid.initialize({
         startOnLoad: false,
-        theme: dark ? 'dark' : 'neutral',
+        // 사이트가 밝은 색만 쓰므로 테마를 고정한다.
+        theme: 'neutral',
         // strict는 HTML 라벨을 끈다. 그러면 mermaid가 SVG 텍스트로 그리면서
         // 한글 폭을 라틴 문자 기준으로 재고, 라벨이 상자 밖으로 잘린다.
         // 마크다운은 이 저장소가 쓴 것이므로 antiscript로 낮춘다.

@@ -1,4 +1,6 @@
+/* 다크 모드를 쓰지 않는다. 밝은 색만 둔다. */
 :root {
+  color-scheme: light;
   --header-h: 3.4rem;
   --bg: #fbfbfa;
   --fg: #1c1c1a;
@@ -10,18 +12,6 @@
   --build: #7a5c2e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17171a;
-    --fg: #ededea;
-    --muted: #9a9a92;
-    --line: #2c2c30;
-    --card: #1e1e22;
-    --accent: #7fb5a3;
-    --experiment: #7fb5a3;
-    --build: #d0a865;
-  }
-}
 
 * { box-sizing: border-box; }
 
@@ -322,3 +312,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
   border-radius: 3px;
 }
 .nav::-webkit-scrollbar-track, .toc::-webkit-scrollbar-track { background: transparent; }
+
+/* 목록 화면은 한 단으로 둔다. 그 자체가 탐색 화면이라 옆에 목록이 필요 없다. */
+.shell[data-index='true'] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 56rem;
+}
+
+.shell[data-index='true'] main { max-width: none; }

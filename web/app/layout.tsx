@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import './globals.css'
 import { loadModules } from '../lib/modules'
-import Sidebar from './sidebar'
-import Toc from './toc'
+import Shell from './shell'
+
+export const viewport = { colorScheme: 'light' as const }
 
 export const metadata: Metadata = {
   title: 'backend-lab',
@@ -31,11 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         </div>
 
-        <div className="shell">
-          <Sidebar items={items} />
-          <main>{children}</main>
-          <Toc />
-        </div>
+        <Shell items={items}>{children}</Shell>
       </body>
     </html>
   )
