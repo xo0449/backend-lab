@@ -24,7 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <Link href="/">backend-lab</Link>
           <nav className="nav-links">
-            <a href="https://xo0449.github.io/">블로그</a>
+            <a href="https://xo0449.github.io/">소개</a>
+            <a href="https://xo0449.github.io/posts/">글</a>
             <a href="https://github.com/xo0449/backend-lab">GitHub</a>
           </nav>
         </header>
