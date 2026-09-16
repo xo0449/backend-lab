@@ -228,22 +228,179 @@ biometricLogin: {
 미리 만들어두지 않는다. 쓰이지 않는 자리는 읽는 사람에게
 "여기 뭔가 있을 수 있다"는 부담만 준다.
 
-### 코드 안의 표를 고른 이유
+### 표가 코드에 어떻게 들어가 있는가
 
-모양이 정해졌으니 어디에 둘지가 남는다.
-목적은 정책 전체를 한 화면에서 보는 것이고,
-그 목적을 만족하는 가장 싼 방법이 코드 안의 리터럴이었다.
+모양이 정해졌으니 어디에 둘지가 남는다. 코드 안의 리터럴로 뒀다.
+파일은 셋이다.
 
-```typescript
-export const CAPABILITIES: Record<Feature, Capability> = { ... }
+```
+src/
+├── types.ts          어떤 값이 존재하는가
+├── capabilities.ts   표와 조회 함수
+└── version.ts        버전 비교
 ```
 
-타입 검사가 공짜로 붙는다. 테스트가 같은 언어로 같은 파일 옆에 붙는다.
-새 기능을 추가할 때 고칠 곳이 이 리터럴 한 곳이다.
-배포 주기가 짧다면 외부화로 얻는 이득이 크지 않다.
+**1. 존재하는 값을 먼저 좁힌다.**
 
-빠뜨린 조합을 눈으로 잡는 것이 목표라면, 그 조합들이 세로로 나란히
-쌓여 있어야 한다. 위 형태가 그걸 만든다.
+```typescript
+export type Platform = 'ios' | 'android' | 'web'
+export type Channel = 'production' | 'beta' | 'internal'
+
+export type Feature =
+  | 'biometricLogin'
+  | 'inAppPurchase'
+  | 'pushRichMedia'
+  | 'darkMode'
+  | 'offlineCart'
+```
+
+문자열이 아니라 유니온이다. 이게 뒤의 모든 검사를 가능하게 한다.
+`'andorid'`라고 오타를 내면 그 자리에서 잡힌다.
+
+**2. 표의 한 칸이 어떤 모양인지 정한다.**
+
+```typescript
+export interface Capability {
+  since: Partial<Record<Platform, string>>
+  earlyAccess?: {
+    channels: Channel[]
+    since: Partial<Record<Platform, string>>
+  }
+}
+```
+
+`Partial`인 것이 의도다. 모든 플랫폼을 적을 필요가 없고,
+적지 않은 플랫폼은 미지원이 된다.
+`earlyAccess`가 선택인 것도 마찬가지다. 선행 개시가 없는 기능이 있다.
+
+**3. 표를 선언한다.**
+
+```typescript
+export const CAPABILITIES: Record<Feature, Capability> = {
+  biometricLogin: {
+    since: { ios: '3.2.0', android: '3.5.0' },
+    earlyAccess: {
+      channels: ['beta', 'internal'],
+      since: { ios: '3.2.0', android: '3.4.0' },
+    },
+  },
+  inAppPurchase: {
+    since: { ios: '4.0.0', android: '4.0.0' },
+    earlyAccess: {
+      channels: ['beta', 'internal'],
+      since: { ios: '3.8.0', android: '3.8.0' },
+    },
+  },
+  pushRichMedia: {
+    since: { ios: '3.0.0', android: '4.0.0' },
+  },
+  darkMode: {
+    since: { ios: '2.9.0', android: '2.9.0', web: '2.9.0' },
+  },
+  offlineCart: {
+    since: { ios: '5.0.0', android: '5.0.0' },
+    earlyAccess: {
+      channels: ['beta', 'internal'],
+      since: { ios: '4.7.0', android: '4.7.0' },
+    },
+  },
+}
+```
+
+정책 전체가 이 30줄이다. 스크롤 없이 한 화면에 들어온다.
+
+`Record<Feature, Capability>`가 중요하다. `Partial`이 아니라 `Record`다.
+**`Feature`에 기능을 하나 더하면 이 표가 컴파일되지 않는다.**
+"기능은 추가했는데 정책을 안 적었다"가 불가능해진다.
+
+### 이 구조가 만드는 세 가지 검사
+
+**타입에 없는 값을 못 쓴다.**
+
+```typescript
+darkMode: {
+  since: { ios: '2.9.0', andorid: '2.9.0' },
+}
+```
+
+```
+error TS2561: Object literal may only specify known properties,
+but 'andorid' does not exist in type 'Partial<Record<Platform, string>>'.
+Did you mean to write 'android'?
+```
+
+**기능을 더하면 표가 깨진다.**
+
+```typescript
+// types.ts에 한 줄만 추가한다
+export type Feature = ... | 'voiceSearch'
+```
+
+`capabilities.ts`는 손대지 않았는데 거기서 오류가 난다.
+
+```
+error TS2741: Property 'voiceSearch' is missing in type
+'{ biometricLogin: ...; offlineCart: ...; }'
+but required in type 'Record<Feature, Capability>'.
+```
+
+기능을 선언한 사람이 정책도 적게 만드는 장치다.
+둘 사이에 문서나 리뷰가 아니라 컴파일러가 서 있다.
+
+**플랫폼을 더해도 표는 안 깨진다.** `Partial`이기 때문이다.
+새 플랫폼은 모든 기능에서 조용히 미지원이 된다.
+이건 의도한 동작이다. 새 플랫폼이 생겼다고 기존 기능이
+전부 열려서는 안 된다.
+
+대신 어느 기능을 열어줄지는 사람이 표를 보고 정해야 한다.
+그때 빈 칸이 세로로 나란히 보이는 것이 도움이 된다.
+
+### 쓰는 쪽
+
+호출부는 한 줄이다.
+
+```typescript
+import { supports } from './capabilities.js'
+
+const client = { platform: 'ios', appVersion: '3.4.0', channel: 'beta' }
+
+if (supports(client, 'biometricLogin')) {
+  showBiometricButton()
+}
+```
+
+`client`는 요청 헤더나 핸드셰이크에서 한 번 만들어 들고 다니면 된다.
+기능 판단이 필요한 곳마다 `supports`를 부른다.
+
+개선 전과 호출 모양이 같다. 바뀐 것은 안쪽뿐이다.
+**그래서 호출부를 한꺼번에 바꾸지 않아도 됐다.**
+
+### 새 기능을 추가할 때
+
+실제로 고치는 것은 두 곳이다.
+
+```diff
+  // types.ts
+  export type Feature =
+    | 'biometricLogin'
+    ...
++   | 'voiceSearch'
+
+  // capabilities.ts
+  export const CAPABILITIES: Record<Feature, Capability> = {
+    ...
++   voiceSearch: {
++     since: { ios: '5.2.0', android: '5.2.0' },
++   },
+  }
+```
+
+조회 코드는 손대지 않는다. 테스트도 손대지 않는다.
+정책의 성질을 검사하는 테스트가 새 항목까지 자동으로 훑기 때문이다.
+
+개선 전이라면 `switch`에 `case`를 하나 더하고, 그 안에 플랫폼 분기를 쓰고,
+버전 비교 두 줄짜리 쌍을 어딘가에서 복사해 왔을 것이다.
+그리고 선행 채널이 필요한지 그 자리에서 판단했을 것이다.
 
 ### 조회 코드
 
@@ -669,19 +826,43 @@ npm run lab:version
 
 불일치가 2건으로 줄어든다. 개선 전 코드와 같아졌다는 뜻이다.
 
-### 3. 새 플랫폼을 추가해보기
+### 3. 타입 검사가 실제로 잡는지 보기
 
-`types.ts`의 `Platform`에 `'desktop'`을 더하고
-`capabilities.ts`의 `since`에 아무것도 넣지 않는다.
+`src/capabilities.ts`의 `darkMode`에서 `android`를 `andorid`로 바꾼다.
 
 ```bash
-npx vitest run modules/version-dispatch
+npx tsc --noEmit -p tsconfig.json
 ```
 
-지원하지 않는 플랫폼은 어떤 버전이어도 거짓이라는 테스트가 그대로 통과한다.
-표에 빈 칸이 곧 미지원이기 때문이다.
+`TS2561`이 나오고 오타를 짚어준다. 되돌린다.
 
-### 4. 테스트
+이번에는 `src/types.ts`의 `Feature`에 `| 'voiceSearch'`만 추가한다.
+`capabilities.ts`는 손대지 않는다.
+
+```bash
+npx tsc --noEmit -p tsconfig.json
+```
+
+`TS2741`이 나온다. 손대지 않은 파일에서 오류가 난다는 것이 핵심이다.
+**정책을 안 적은 기능은 존재할 수 없다.**
+
+### 4. 새 플랫폼을 추가해보기
+
+`src/types.ts`의 `Platform`에 `'desktop'`을 추가한다.
+`capabilities.ts`는 손대지 않는다.
+
+```bash
+npx tsc --noEmit -p tsconfig.json
+```
+
+이번에는 통과한다. `since`가 `Partial`이라 빈 칸이 허용되기 때문이다.
+새 플랫폼은 모든 기능에서 미지원이 된다. 의도한 동작이다.
+
+```bash
+npx vitest run modules/version-dispatch -t "표에 없는 플랫폼"
+```
+
+### 5. 테스트
 
 ```bash
 npx vitest run modules/version-dispatch
