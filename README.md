@@ -26,6 +26,7 @@
 | [경로가 둘이면 고장도 둘인데, 둘 다 조용히 고장 난다](modules/dual-write-reconcile) | 실험 | 적재 경로가 둘일 때 한쪽만 끊긴 것을 어떻게 알아채는가 |
 | [어제 밤 스냅샷으로 오늘 아침에 답하면 매출이 14.5% 높게 나온다](modules/order-join-freshness) | 실험 | 운영 DB의 사실을 분석 쪽으로 어떻게 가져올 것인가 |
 | [저장은 한 벌, 계산은 여러 개로 나누면 얼마나 달라지는가](modules/workload-isolation) | 실험 | 성격이 다른 작업이 같이 돌 때 데이터를 복사하지 않고 어떻게 나눌 것인가 |
+| [500ms마다 50ms씩 막는 코드가 p99에는 안 보였다](modules/event-loop-blocking) | 실험 | 이벤트 루프를 막는 동기 작업은 몇 ms부터 지연에 보이는가 |
 
 ## 실행
 
@@ -55,6 +56,7 @@ npm run lab:query         # 적재 없이 저장소에서 바로 읽기
 npm run lab:dual          # 이중 전송 대조
 npm run lab:orders        # 운영 DB 조인과 신선도
 npm run lab:isolation     # 배치와 조회의 자원 분리
+npm run lab:loop          # 이벤트 루프를 막는 동기 작업
 ```
 
 각 모듈 README 맨 아래의 "직접 실행해보기"에 케이스별 명령이 있습니다.

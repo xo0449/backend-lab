@@ -1,0 +1,15 @@
+{
+  "slug": "event-loop-blocking",
+  "type": "experiment",
+  "title": "500ms마다 50ms씩 막는 코드가 p99에는 안 보였다",
+  "summary": "이벤트 루프를 막는 동기 작업이 몇 ms부터 지연에 드러나는지 쟀다. CPU를 똑같이 10% 쓰는 세 가지 중, 한 번에 오래 붙잡는 쪽이 p99에서는 가장 멀쩡해 보이고 p99.9에서만 드러났다. 23바이트짜리 정규식 입력 하나가 1MB JSON.parse보다 3.6배 오래 막았다.",
+  "tags": ["Node.js", "이벤트 루프", "지연", "백분위", "정규식"],
+  "question": "이벤트 루프를 막는 동기 작업은 몇 ms부터 지연에 보이는가",
+  "metrics": [
+    { "label": "100ms마다 막을 때 조회 p99", "before": "안 막을 때 3.0ms", "after": "20ms씩 막으면 10.6ms · 3.5배" },
+    { "label": "CPU 10%로 같을 때 · p99", "before": "10ms를 100ms마다 3.3ms", "after": "50ms를 500ms마다 1.9ms · 기준보다 낮음" },
+    { "label": "CPU 10%로 같을 때 · p99.9", "before": "10ms를 100ms마다 11.8ms", "after": "50ms를 500ms마다 51.6ms · 4.4배" },
+    { "label": "한 번에 막는 시간", "before": "JSON.parse 1MB 5.71ms", "after": "정규식 입력 23B 20.82ms · 3.6배" }
+  ],
+  "createdAt": "2026-09-18"
+}
