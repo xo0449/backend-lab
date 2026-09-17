@@ -20,7 +20,8 @@
     "lab:layout": "tsx modules/event-storage-layout/bench/run.ts",
     "lab:query": "tsx modules/query-without-loading/bench/run.ts",
     "lab:dual": "tsx modules/dual-write-reconcile/bench/run.ts",
-    "lab:orders": "tsx modules/order-join-freshness/bench/run.ts"
+    "lab:orders": "tsx modules/order-join-freshness/bench/run.ts",
+    "lab:isolation": "tsx modules/workload-isolation/bench/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1132.0",
