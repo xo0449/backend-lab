@@ -27,6 +27,7 @@
 | [어제 밤 스냅샷으로 오늘 아침에 답하면 매출이 14.5% 높게 나온다](modules/order-join-freshness) | 실험 | 운영 DB의 사실을 분석 쪽으로 어떻게 가져올 것인가 |
 | [저장은 한 벌, 계산은 여러 개로 나누면 얼마나 달라지는가](modules/workload-isolation) | 실험 | 성격이 다른 작업이 같이 돌 때 데이터를 복사하지 않고 어떻게 나눌 것인가 |
 | [500ms마다 50ms씩 막는 코드가 p99에는 안 보였다](modules/event-loop-blocking) | 실험 | 이벤트 루프를 막는 동기 작업은 몇 ms부터 지연에 보이는가 |
+| [56MB 파일을 읽는데 힙이 250MB까지 갔다](modules/stream-backpressure) | 실험 | Node 스트림으로 100만 건 CSV를 처리할 때 backpressure를 무시하면 메모리가 언제 터지는가 |
 
 ## 실행
 
@@ -57,6 +58,7 @@ npm run lab:dual          # 이중 전송 대조
 npm run lab:orders        # 운영 DB 조인과 신선도
 npm run lab:isolation     # 배치와 조회의 자원 분리
 npm run lab:loop          # 이벤트 루프를 막는 동기 작업
+npm run lab:stream        # 스트림 backpressure와 메모리
 ```
 
 각 모듈 README 맨 아래의 "직접 실행해보기"에 케이스별 명령이 있습니다.

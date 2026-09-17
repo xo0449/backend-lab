@@ -1,0 +1,16 @@
+{
+  "slug": "stream-backpressure",
+  "type": "experiment",
+  "title": "56MB 파일을 읽는데 힙이 250MB까지 갔다",
+  "summary": "100만 건 CSV를 스트림으로 적재하면서 write()의 반환값을 안 봤다. 못 삼킨 90만 건이 버퍼에 앉아 힙이 250.8MB가 됐다. 힙 상한 192MB에서는 프로세스가 내려갔다. 그런데 터지는 자리를 정하는 건 파일 크기가 아니라 앞뒤 처리량 비였다.",
+  "tags": ["Node.js", "스트림", "backpressure", "메모리", "배치"],
+  "question": "Node 스트림으로 100만 건 CSV를 처리할 때 backpressure를 무시하면 메모리가 언제 터지는가",
+  "metrics": [
+    { "label": "살아있는 힙 최대 · 100만 건 56.8MB CSV", "before": "250.8MB · write() 반환값을 안 봄", "after": "7.6MB · pipeline() · 33배 낮음" },
+    { "label": "쓰기 버퍼에 쌓인 최대", "before": "909,100건", "after": "999건 · highWaterMark 그대로" },
+    { "label": "힙 상한 192MB에서 버틴 건수", "before": "50만 건까지 · 100만 건에서 죽음", "after": "100만 건 살아남음 · 힙 7.5MB" },
+    { "label": "쌓이는 양을 정한 것은 파일이 아니었다", "before": "적재처가 100건씩 삼킴 · 909,100건", "after": "4000건씩 삼킴 · 1,086건 · 힙 7.5MB" },
+    { "label": "적재처가 터졌을 때 안 닫힌 스트림 · 200판", "before": "pipe() · 읽기 200개 · 중간 400개", "after": "pipeline() · 0개 · 0개" }
+  ],
+  "createdAt": "2026-09-18"
+}
