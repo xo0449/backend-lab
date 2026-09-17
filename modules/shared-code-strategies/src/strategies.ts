@@ -22,6 +22,15 @@ function nodeRun(ws: Workspace, dir: string, file = 'main.mjs') {
 }
 
 /**
+ * npm을 부른다. 윈도우에서 npm은 실행 파일이 아니라 npm.cmd라서
+ * 셸 없이 execFileSync로 부르면 ENOENT가 난다.
+ */
+function npmRun(args: string[], cwd: string) {
+  const win = process.platform === 'win32'
+  return execFileSync(win ? 'npm.cmd' : 'npm', args, { cwd, shell: win })
+}
+
+/**
  * A. 복사해서 붙인다.
  *
  * 공유 장치가 없다. 각 서비스가 자기 사본을 갖는다.
@@ -127,7 +136,7 @@ export const packaged: Strategy = {
         files: ['discount.mjs'],
       }, null, 2))
       ws.write('shared-pkg/discount.mjs', DISCOUNT_V1)
-      execFileSync('npm', ['pack', '--silent', '--pack-destination', ws.root], { cwd: pkg })
+      npmRun(['pack', '--silent', '--pack-destination', ws.root], pkg)
 
       for (const s of ['service-a', 'service-b']) {
         const dir = ws.dir(s)
@@ -135,8 +144,8 @@ export const packaged: Strategy = {
           name: s, version: '1.0.0', type: 'module',
         }, null, 2))
         ws.write(`${s}/main.mjs`, SERVICE_MAIN('lab-discount'))
-        execFileSync('npm', ['install', '--silent', '--no-audit', '--no-fund',
-          ws.path('lab-discount-1.0.0.tgz')], { cwd: dir })
+        npmRun(['install', '--silent', '--no-audit', '--no-fund',
+          ws.path('lab-discount-1.0.0.tgz')], dir)
         ws.initRepo(dir)
         ws.commit(dir, 'init')
       }
@@ -199,7 +208,7 @@ export const monorepo: Strategy = {
         }, null, 2))
         ws.write(`repo/services/${s}/main.mjs`, SERVICE_MAIN('lab-discount'))
       }
-      execFileSync('npm', ['install', '--silent', '--no-audit', '--no-fund'], { cwd: root })
+      npmRun(['install', '--silent', '--no-audit', '--no-fund'], root)
       ws.initRepo(root)
       ws.commit(root, 'init')
     })

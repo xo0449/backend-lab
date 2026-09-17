@@ -66,10 +66,13 @@ export class Workspace {
 
   run(cwd: string, cmd: string, args: string[]): string {
     if (this.counting) this.steps.push({ cwd, cmd: `${cmd} ${args.join(' ')}` })
-    return execFileSync(cmd, args, {
+    // 윈도우에서 npm은 npm.cmd라서 셸 없이는 ENOENT가 난다. 세는 단계 이름은 그대로 둔다.
+    const winNpm = process.platform === 'win32' && cmd === 'npm'
+    return execFileSync(winNpm ? 'npm.cmd' : cmd, args, {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: winNpm,
       env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
     })
   }
