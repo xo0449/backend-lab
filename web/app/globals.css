@@ -282,3 +282,60 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
 .result-count { margin-left: auto; color: var(--muted); font-size: 0.82rem; }
 .filters { align-items: center; }
 .empty { color: var(--muted); padding: 2rem 0; }
+
+/*
+ * 글 아래 물어보기 블록. 블로그에도 같은 것이 있다.
+ * 본문과 구분되되 광고처럼 튀지 않아야 해서 배경만 한 톤 눕힌다.
+ */
+.ask {
+  margin: 3.5rem 0 1rem;
+  padding: 1.6rem 1.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.ask h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  border: none;
+  padding: 0;
+}
+
+.ask p {
+  margin: 0 0 1.2rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.ask-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ask-button {
+  display: inline-block;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.ask-button:hover { opacity: 0.85; text-decoration: none; }
+
+/* 두 번째 버튼은 같은 무게로 두면 무엇을 눌러야 할지 헷갈린다. */
+.ask-button-quiet {
+  background: transparent;
+  color: var(--accent);
+  border-color: var(--line);
+}
+
+.ask-button-quiet:hover { border-color: var(--accent); }

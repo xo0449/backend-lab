@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { marked } from 'marked'
 import { loadModule, loadModules } from '../../../lib/modules'
 import Mermaid from '../../mermaid'
+import Ask from '../../ask'
 
 export function generateStaticParams() {
   return loadModules().map((m) => ({ slug: m.meta.slug }))
@@ -61,6 +62,8 @@ export default async function ModulePage({
 
       <article className="readme" dangerouslySetInnerHTML={{ __html: html }} />
       <Mermaid />
+
+      <Ask />
     </>
   )
 }
