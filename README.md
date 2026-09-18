@@ -29,6 +29,7 @@
 | [500ms마다 50ms씩 막는 코드가 p99에는 안 보였다](modules/event-loop-blocking) | 실험 | 이벤트 루프를 막는 동기 작업은 몇 ms부터 지연에 보이는가 |
 | [56MB 파일을 읽는데 힙이 250MB까지 갔다](modules/stream-backpressure) | 실험 | Node 스트림으로 100만 건 CSV를 처리할 때 backpressure를 무시하면 메모리가 언제 터지는가 |
 | [서버는 14%만 일했는데 1,000개 중 635개가 포기했다](modules/retry-jitter) | 실험 | 재시도에 지터를 넣는 것과 안 넣는 것은 동시 재시도 폭주에서 얼마나 다른가 |
+| [forwardRef를 붙였더니 에러는 사라졌는데 생성자에서 본 값이 undefined였다](modules/nest-circular) | 실험 | NestJS 모듈이 서로를 import할 때 순환이 생기면 무엇이 언제 깨지는가 |
 
 ## 실행
 
@@ -61,6 +62,7 @@ npm run lab:isolation     # 배치와 조회의 자원 분리
 npm run lab:loop          # 이벤트 루프를 막는 동기 작업
 npm run lab:stream        # 스트림 backpressure와 메모리
 npm run lab:jitter        # 재시도 지터와 동시 재시도 폭주
+npm run lab:circular      # NestJS 순환 참조와 forwardRef
 ```
 
 각 모듈 README 맨 아래의 "직접 실행해보기"에 케이스별 명령이 있습니다.

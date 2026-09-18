@@ -1,0 +1,11 @@
+import { Injectable } from '@nestjs/common'
+import { BService } from './b.service'
+
+@Injectable()
+export class AService {
+  constructor(readonly b: BService) {}
+
+  hello() {
+    return `a sees ${this.b.name()}`
+  }
+}

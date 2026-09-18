@@ -1,0 +1,17 @@
+{
+  "slug": "nest-circular",
+  "type": "experiment",
+  "title": "forwardRef를 붙였더니 에러는 사라졌는데 생성자에서 본 값이 undefined였다",
+  "summary": "NestJS 앱 15개를 자식 프로세스로 띄워 순환이 어느 단계에서 어떤 메시지로 깨지는지 받아 적었다. 프로바이더 순환의 에러는 순환이 아니라 import type을 의심하라고 했고, import 두 줄의 순서를 바꾸면 지목하는 클래스가 바뀌었다. DI에 순환이 없는 배럴 import도 같은 메시지로 죽었다. forwardRef를 양쪽에 붙이면 뜨지만 생성자에서 본 상대의 필드는 에러 없이 undefined였고, #private 필드는 부팅이 끝난 뒤에도 던졌다.",
+  "tags": ["Node.js", "NestJS", "의존성 주입", "순환 참조", "forwardRef"],
+  "question": "NestJS 모듈이 서로를 import할 때 순환이 생기면 무엇이 언제 깨지는가. forwardRef가 푸는 것과 못 푸는 것",
+  "metrics": [
+    { "label": "프로바이더 순환의 에러가 지목한 클래스", "before": "BService · a를 먼저 읽음", "after": "AService · import 두 줄의 순서만 바꿈" },
+    { "label": "DI에 순환이 없는 배럴 import", "before": "기대: 뜬다", "after": "boot에서 죽음 · 프로바이더 순환과 메시지가 같다" },
+    { "label": "forwardRef를 한쪽에만 붙였을 때", "before": "a를 먼저 읽음 · boot에서 죽음", "after": "b를 먼저 읽음 · 뜸" },
+    { "label": "양쪽 forwardRef · 생성자에서 읽은 상대의 필드", "before": "A가 본 b.limit · undefined · 에러 없음", "after": "부팅 뒤 a.b.limit · 100" },
+    { "label": "양쪽 forwardRef · #private 필드 · 부팅이 끝난 뒤 호출", "before": "순환 밖의 서비스 · 100", "after": "순환에 낀 서비스 · Cannot read private member" },
+    { "label": "읽는 순서를 바꿔도 뜨는 해법", "before": "ModuleRef · a 먼저 읽으면 죽음", "after": "이벤트로 끊기 · 셋째로 빼기 · 둘 다 뜸" }
+  ],
+  "createdAt": "2026-09-18"
+}
