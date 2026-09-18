@@ -23,7 +23,8 @@
     "lab:orders": "tsx modules/order-join-freshness/bench/run.ts",
     "lab:isolation": "tsx modules/workload-isolation/bench/run.ts",
     "lab:loop": "tsx modules/event-loop-blocking/bench/run.ts",
-    "lab:stream": "tsx --expose-gc modules/stream-backpressure/bench/run.ts"
+    "lab:stream": "tsx --expose-gc modules/stream-backpressure/bench/run.ts",
+    "lab:jitter": "tsx modules/retry-jitter/bench/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1132.0",
