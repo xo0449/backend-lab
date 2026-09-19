@@ -25,7 +25,8 @@
     "lab:loop": "tsx modules/event-loop-blocking/bench/run.ts",
     "lab:stream": "tsx --expose-gc modules/stream-backpressure/bench/run.ts",
     "lab:jitter": "tsx modules/retry-jitter/bench/run.ts",
-    "lab:circular": "tsx modules/nest-circular/bench/run.ts"
+    "lab:circular": "tsx modules/nest-circular/bench/run.ts",
+    "lab:signing": "tsx modules/code-signing-authenticode/bench/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1132.0",
